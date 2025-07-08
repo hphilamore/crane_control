@@ -8,6 +8,9 @@
 */
 
 #include <Servo.h>
+#include "Adafruit_VL53L0X.h"
+
+Adafruit_VL53L0X lox = Adafruit_VL53L0X();
 
 Servo myservo;  // create Servo object to control a servo
 
@@ -21,7 +24,21 @@ unsigned long t_start, t_end, period; // variables to calculate length of button
 void setup() {
   pinMode(button_pin, INPUT_PULLUP);  // internal pullup on button pin
   myservo.attach(9);                  // attaches the servo on pin 9 to the Servo object
-  Serial.begin(9600);
+  Serial.begin(115200);
+  //Serial.begin(9600);
+
+  // wait until serial port opens for native USB devices
+  while (! Serial) {
+    delay(1);
+  }
+
+  Serial.println("Adafruit VL53L0X test");
+  if (!lox.begin()) {
+    Serial.println(F("Failed to boot VL53L0X"));
+    while(1);
+  }
+  // power 
+  Serial.println(F("VL53L0X API Simple Ranging example\n\n")); 
 }
 
 void loop() {
@@ -35,16 +52,36 @@ void loop() {
     Serial.println("stop");
     myservo.write(val); 
     button_status = digitalRead(button_pin);  
+
   }
 
   t_start = millis();
 
   // when the button is pressed and held, lower the crane 
   while (button_status == 0){
-    val = 180;
-    Serial.println("lower");
+    val = 100;
+    // Serial.println("lower");
     myservo.write(val); 
     button_status = digitalRead(button_pin);  
+
+    VL53L0X_RangingMeasurementData_t measure;
+    
+    // Serial.print("Reading a measurement... ");
+    lox.rangingTest(&measure, false); // pass in 'true' to get debug data printout!
+
+    if (measure.RangeStatus != 4) {  // phase failures have incorrect data
+      float distance = measure.RangeMilliMeter;
+      Serial.print("Distance (mm): "); //Serial.println(measure.RangeMilliMeter);
+      if (distance < 30){
+        Serial.print("*******");
+      }
+      Serial.println(distance);
+
+    } else {
+      Serial.println(" out of range ");
+    }
+      
+    delay(10);
   }
 
   // calculate length if time button pressed 
