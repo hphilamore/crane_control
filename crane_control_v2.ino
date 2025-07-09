@@ -66,24 +66,24 @@ void loop() {
         myservo.write(val); 
         button_status = digitalRead(button_pin);  
 
-        // VL53L0X_RangingMeasurementData_t measure;
+        VL53L0X_RangingMeasurementData_t measure;
         
-        // // Serial.print("Reading a measurement... ");
-        // lox.rangingTest(&measure, false); // pass in 'true' to get debug data printout!
+        // Serial.print("Reading a measurement... ");
+        lox.rangingTest(&measure, false); // pass in 'true' to get debug data printout!
 
-        // if (measure.RangeStatus != 4) {  // phase failures have incorrect data
-        //   float distance = measure.RangeMilliMeter;
-        //   Serial.print("Distance (mm): "); //Serial.println(measure.RangeMilliMeter);
-        //   if (distance < 30){
-        //     Serial.print("*******");
-        //   }
-        //   Serial.println(distance);
+        if (measure.RangeStatus != 4) {  // phase failures have incorrect data
+          float distance = measure.RangeMilliMeter;
+          Serial.print("Distance (mm): "); //Serial.println(measure.RangeMilliMeter);
+          if (distance < 30){
+            Serial.print("*******");
+          }
+          Serial.println(distance);
 
-        // } else {
-        //   Serial.println(" out of range ");
-        // }
+        } else {
+          Serial.println(" out of range ");
+        }
           
-        // delay(10);
+        delay(10);
       }
 
       // calculate length of time the button was pressed 
@@ -101,7 +101,7 @@ void loop() {
 
   //if the button is not pressed, do nothing 
   val = 94;  // stop servo
-  Serial.println("stop");
+  //Serial.println("stop");
   myservo.write(val); 
   last_button_status = button_status; 
 
