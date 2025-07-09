@@ -14,11 +14,13 @@ Adafruit_VL53L0X lox = Adafruit_VL53L0X();
 
 Servo myservo;  // create Servo object to control a servo
 
-int button_pin = 2;  
+int val;                    // value to send to servo
+int button_pin = 2; 
+int button_status;         // status of push button
+int last_button_status = 1; // previos status of push button 
 
-int val;           // value to send to servo
-int button_status; // status of push button
-
+unsigned long t_last_state_change = millis(); // last time the button pin was toggled
+unsigned long debounce_delay;                  // time to wait before confirming button press
 unsigned long t_start, t_end, period; // variables to calculate length of button press
 
 void setup() {
@@ -32,68 +34,137 @@ void setup() {
     delay(1);
   }
 
-  Serial.println("Adafruit VL53L0X test");
+  // check if laser ToF sensor is present 
   if (!lox.begin()) {
     Serial.println(F("Failed to boot VL53L0X"));
     while(1);
   }
-  // power 
-  Serial.println(F("VL53L0X API Simple Ranging example\n\n")); 
+ 
 }
 
 void loop() {
+  // read the state of the button
+  button_status = digitalRead(button_pin); 
 
-  // get the stats of the push button
-  button_status = digitalRead(button_pin);            // reads the value of the potentiometer (value between 0 and 1023)
-   
-  // if the button is not pressed, do nothing 
-  while (button_status == 1){
-    val = 94;  // stop servo
-    Serial.println("stop");
-    myservo.write(val); 
-    button_status = digitalRead(button_pin);  
-
+  // check if the button changed state and reset timer
+  if (button_status != last_button_status){
+    t_last_state_change = millis();
   }
 
-  t_start = millis();
+  // check if the time since the last state change indicates an actual button press
+  if (millis() - t_last_state_change > debounce_delay){
 
-  // when the button is pressed and held, lower the crane 
-  while (button_status == 0){
-    val = 100;
-    // Serial.println("lower");
-    myservo.write(val); 
-    button_status = digitalRead(button_pin);  
+    // check button is pressed
+    if (button_status == 0){
 
-    VL53L0X_RangingMeasurementData_t measure;
-    
-    // Serial.print("Reading a measurement... ");
-    lox.rangingTest(&measure, false); // pass in 'true' to get debug data printout!
+      t_start = millis(); // time of start of button press
 
-    if (measure.RangeStatus != 4) {  // phase failures have incorrect data
-      float distance = measure.RangeMilliMeter;
-      Serial.print("Distance (mm): "); //Serial.println(measure.RangeMilliMeter);
-      if (distance < 30){
-        Serial.print("*******");
+      // when the button is pressed and held, lower the crane 
+      while (button_status == 0){
+        val = 100;
+        Serial.println("lower");
+        myservo.write(val); 
+        button_status = digitalRead(button_pin);  
+
+        // VL53L0X_RangingMeasurementData_t measure;
+        
+        // // Serial.print("Reading a measurement... ");
+        // lox.rangingTest(&measure, false); // pass in 'true' to get debug data printout!
+
+        // if (measure.RangeStatus != 4) {  // phase failures have incorrect data
+        //   float distance = measure.RangeMilliMeter;
+        //   Serial.print("Distance (mm): "); //Serial.println(measure.RangeMilliMeter);
+        //   if (distance < 30){
+        //     Serial.print("*******");
+        //   }
+        //   Serial.println(distance);
+
+        // } else {
+        //   Serial.println(" out of range ");
+        // }
+          
+        // delay(10);
       }
-      Serial.println(distance);
 
-    } else {
-      Serial.println(" out of range ");
+      // calculate length of time the button was pressed 
+      t_end = millis();
+      period = t_end - t_start;
+
+      // raise the crane for the same amount of time as it was lowered for
+      val = 0;
+      Serial.println("return");
+      Serial.println(period);
+      myservo.write(val); 
+      delay(period); 
     }
-      
-    delay(10);
   }
 
-  // calculate length if time button pressed 
-  t_end = millis();
-  period = t_end - t_start;
-
-  // raise the crabe for the same amount of time as it was lowered for
-  val = 0;
-  Serial.println("return");
-  Serial.println(period);
+  //if the button is not pressed, do nothing 
+  val = 94;  // stop servo
+  Serial.println("stop");
   myservo.write(val); 
-  delay(period);   
+  last_button_status = button_status; 
+
+}  
+
+
+
+
+    
+
+
+
+//   // // get the stats of the push button
+//   // button_status = digitalRead(button_pin);            // reads the value of the potentiometer (value between 0 and 1023)
+   
+//   // if the button is not pressed, do nothing 
+//   while (button_status == 1){
+//     val = 94;  // stop servo
+//     Serial.println("stop");
+//     myservo.write(val); 
+//     button_status = digitalRead(button_pin);  
+
+//   }
+
+//   t_start = millis();
+
+//   // when the button is pressed and held, lower the crane 
+//   while (button_status == 0){
+//     val = 100;
+//     // Serial.println("lower");
+//     myservo.write(val); 
+//     button_status = digitalRead(button_pin);  
+
+//     VL53L0X_RangingMeasurementData_t measure;
+    
+//     // Serial.print("Reading a measurement... ");
+//     lox.rangingTest(&measure, false); // pass in 'true' to get debug data printout!
+
+//     if (measure.RangeStatus != 4) {  // phase failures have incorrect data
+//       float distance = measure.RangeMilliMeter;
+//       Serial.print("Distance (mm): "); //Serial.println(measure.RangeMilliMeter);
+//       if (distance < 30){
+//         Serial.print("*******");
+//       }
+//       Serial.println(distance);
+
+//     } else {
+//       Serial.println(" out of range ");
+//     }
+      
+//     delay(10);
+//   }
+
+//   // calculate length if time button pressed 
+//   t_end = millis();
+//   period = t_end - t_start;
+
+//   // raise the crabe for the same amount of time as it was lowered for
+//   val = 0;
+//   Serial.println("return");
+//   Serial.println(period);
+//   myservo.write(val); 
+//   delay(period);   
 
                           
-}
+// }
