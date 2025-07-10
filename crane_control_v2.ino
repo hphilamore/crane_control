@@ -61,7 +61,7 @@ void loop() {
     // check button is pressed
     if (button_status == 0){
 
-      t_start = millis(); // time of start of button press
+      // t_start = millis(); // time of start of button press
 
       // when the button is pressed and held, lower the crane
       while (button_status == 0){
@@ -110,13 +110,15 @@ void encoder(String count_direction){
     encoder_distance = measure.RangeMilliMeter;
 
     // Serial.print("Distance (mm): "); 
-    //Serial.println(measure.RangeMilliMeter);
+    // Serial.println(measure.RangeMilliMeter);
 
     // if the encoder wheel changes state, increment counter by 1
     if ((10 < encoder_distance && encoder_distance < 30 && 
         30 < last_encoder_distance && last_encoder_distance < 50) || 
         (10 < last_encoder_distance && last_encoder_distance < 30 && 
         30 < encoder_distance && encoder_distance < 50)){
+
+          // Serial.println("***");
 
           if (count_direction == "+"){
             encoder_count += 1;
