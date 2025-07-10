@@ -17,7 +17,11 @@ Servo myservo;  // create Servo object to control a servo
 int val;                    // value to send to servo
 int button_pin = 2; 
 int button_status;         // status of push button
-int last_button_status = 1; // previos status of push button 
+int last_button_status = 1; // previos status of push button
+
+int encoder_count = 0;
+float encoder_distance;
+float last_encoder_distance;
 
 unsigned long t_last_state_change = millis(); // last time the button pin was toggled
 unsigned long debounce_delay;                  // time to wait before confirming button press
@@ -59,53 +63,82 @@ void loop() {
 
       t_start = millis(); // time of start of button press
 
-      // when the button is pressed and held, lower the crane 
+      // when the button is pressed and held, lower the crane
       while (button_status == 0){
         val = 100;
-        Serial.println("lower");
+        //Serial.println("lower");
         myservo.write(val); 
-        button_status = digitalRead(button_pin);  
-
-        VL53L0X_RangingMeasurementData_t measure;
-        
-        // Serial.print("Reading a measurement... ");
-        lox.rangingTest(&measure, false); // pass in 'true' to get debug data printout!
-
-        if (measure.RangeStatus != 4) {  // phase failures have incorrect data
-          float distance = measure.RangeMilliMeter;
-          Serial.print("Distance (mm): "); //Serial.println(measure.RangeMilliMeter);
-          if (distance < 30){
-            Serial.print("*******");
-          }
-          Serial.println(distance);
-
-        } else {
-          Serial.println(" out of range ");
-        }
-          
-        delay(10);
+        button_status = digitalRead(button_pin); 
+        encoder("+"); // measure distance lowered using encoder
       }
 
-      // calculate length of time the button was pressed 
-      t_end = millis();
-      period = t_end - t_start;
+      // // calculate length of time the button was pressed 
+      // t_end = millis();
+      // period = t_end - t_start;
 
-      // raise the crane for the same amount of time as it was lowered for
+      // raise the crane the same distance as it was lowered
       val = 0;
       Serial.println("return");
-      Serial.println(period);
       myservo.write(val); 
-      delay(period); 
+      // Serial.println(period);
+      // delay(period);
+      while (encoder_count > 0){
+        encoder("-");
+      }
+
     }
   }
 
-  //if the button is not pressed, do nothing 
+  //if the push button is not pressed, stop the servo 
   val = 94;  // stop servo
-  //Serial.println("stop");
   myservo.write(val); 
   last_button_status = button_status; 
 
 }  
+
+void encoder(String count_direction){
+  /*
+  Measures the distance the crane is lifted/lowered
+  */
+
+  VL53L0X_RangingMeasurementData_t measure;
+
+  lox.rangingTest(&measure, false); // pass in 'true' to get debug data printout!
+
+  if (measure.RangeStatus != 4) {  // phase failures have incorrect data
+
+    encoder_distance = measure.RangeMilliMeter;
+
+    // Serial.print("Distance (mm): "); 
+    //Serial.println(measure.RangeMilliMeter);
+
+    // if the encoder wheel changes state, increment counter by 1
+    if ((10 < encoder_distance && encoder_distance < 30 && 
+        30 < last_encoder_distance && last_encoder_distance < 50) || 
+        (10 < last_encoder_distance && last_encoder_distance < 30 && 
+        30 < encoder_distance && encoder_distance < 50)){
+
+          if (count_direction == "+"){
+            encoder_count += 1;
+          }
+          else if (count_direction == "-"){
+            encoder_count -= 1;
+          }
+      }
+
+    // update encoder measurement 
+    last_encoder_distance = encoder_distance;
+
+    Serial.println(encoder_count);
+    } 
+        
+  else {
+    Serial.println(" out of range ");
+    }
+
+  delay(10);
+
+}
 
 
 
