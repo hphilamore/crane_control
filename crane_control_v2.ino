@@ -61,26 +61,26 @@ void loop() {
     // check button is pressed
     if (button_status == 0){
 
-      // t_start = millis(); // time of start of button press
+      t_start = millis(); // time of start of button press
 
       // when the button is pressed and held, lower the crane
       while (button_status == 0){
-        val = 100;
+        val = 180;
         //Serial.println("lower");
         myservo.write(val); 
         button_status = digitalRead(button_pin); 
         encoder("+"); // measure distance lowered using encoder
       }
 
-      // // calculate length of time the button was pressed 
-      // t_end = millis();
-      // period = t_end - t_start;
+      // calculate length of time the button was pressed 
+      t_end = millis();
+      period = t_end - t_start;
 
       // raise the crane the same distance as it was lowered
       val = 0;
       Serial.println("return");
       myservo.write(val); 
-      // Serial.println(period);
+      Serial.println(period);
       // delay(period);
       while (encoder_count > 0){
         encoder("-");
@@ -109,16 +109,14 @@ void encoder(String count_direction){
 
     encoder_distance = measure.RangeMilliMeter;
 
-    // Serial.print("Distance (mm): "); 
-    // Serial.println(measure.RangeMilliMeter);
 
     // if the encoder wheel changes state, increment counter by 1
     if ((10 < encoder_distance && encoder_distance < 30 && 
-        30 < last_encoder_distance && last_encoder_distance < 50) || 
+        30 <= last_encoder_distance && last_encoder_distance < 50) || 
         (10 < last_encoder_distance && last_encoder_distance < 30 && 
-        30 < encoder_distance && encoder_distance < 50)){
+        30 <= encoder_distance && encoder_distance < 50)){
 
-          // Serial.println("***");
+          Serial.println("***");
 
           if (count_direction == "+"){
             encoder_count += 1;
@@ -126,19 +124,26 @@ void encoder(String count_direction){
           else if (count_direction == "-"){
             encoder_count -= 1;
           }
+
+          // Serial.println("***");
       }
+
+    // Serial.print("Distance (mm): "); 
+    // Serial.println(encoder_distance);
+
+    Serial.println(encoder_count);
 
     // update encoder measurement 
     last_encoder_distance = encoder_distance;
 
-    Serial.println(encoder_count);
+    
     } 
         
   else {
     Serial.println(" out of range ");
     }
 
-  delay(10);
+  // delay(10);
 
 }
 
